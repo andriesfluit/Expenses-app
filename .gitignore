@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Lokale omgevingsvariabelen
+.env
+.env.local

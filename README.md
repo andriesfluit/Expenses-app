@@ -1,69 +1,77 @@
-# Welcome to your Lovable project
+# Vakantiekas
 
-## Project info
+Uitgaven van een groepsvakantie verdelen over meerdere huishoudens en aan het
+eind afrekenen in zo min mogelijk overschrijvingen.
 
-**URL**: https://lovable.dev/projects/01e34991-a8a2-4b53-a56f-b1d47a697b90
+Gebouwd voor een reis met vijf huishoudens van uiteenlopende grootte, waar
+"gewoon door vijf delen" niet klopt omdat een gezin van vijf nu eenmaal meer
+boodschappen opmaakt dan wie alleen komt.
 
-## How can I edit this code?
+## Wat het doet
 
-There are several ways of editing your application.
+- **Huishoudens** met een naam en een aantal personen. Elk gezinslid telt even
+  zwaar mee, kinderen inbegrepen.
+- **Uitgaven** met een eigen verdeelsleutel:
+  - *Per persoon* — naar hoofdtelling, dus een gezin van 5 draagt vijf keer
+    zoveel als wie alleen komt. Voor boodschappen, huur, eten.
+  - *Per huishouden* — gelijke delen, ongeacht gezinsgrootte.
+- **Deelnemers per uitgave**: standaard doet iedereen mee, maar je kunt een
+  uitgave beperken tot de huishoudens die er echt bij waren. Wie betaalde hoeft
+  zelf niet mee te delen.
+- **Saldo per huishouden**: voorgeschoten min het eigen aandeel.
+- **Afrekening**: wie moet wie betalen, in zo weinig mogelijk overschrijvingen.
+  Bij vijf huishoudens scheelt dat doorgaans vier betalingen in plaats van
+  twintig.
 
-**Use Lovable**
+Bedragen worden overal als geheel aantal eurocent bijgehouden en met de
+largest-remainder-methode verdeeld, zodat de som van de delen exact het
+uitgegeven bedrag is — er verdwijnt of ontstaat nooit een cent.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/01e34991-a8a2-4b53-a56f-b1d47a697b90) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Draaien
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Zonder verdere configuratie bewaart de app alles in de browser van dat ene
+toestel. Genoeg om te proberen, maar de anderen zien er niets van.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Delen met de hele reis
 
-**Use GitHub Codespaces**
+Om iedereen op zijn eigen telefoon te laten invoeren:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Maak een gratis project op [supabase.com](https://supabase.com).
+2. Voer `supabase/schema.sql` uit in de SQL Editor van dat project.
+3. Kopieer `.env.example` naar `.env` en vul de projecturl en de anon-sleutel in
+   (Project Settings → API).
+4. `npm run dev`, of publiceer de gebouwde site.
 
-## What technologies are used for this project?
+De app schakelt vanzelf over zodra die twee variabelen gezet zijn; de statusregel
+rechtsboven laat zien welke opslag actief is. Wijzigingen van andere toestellen
+komen live binnen.
 
-This project is built with .
+**Over de beveiliging**: de anon-sleutel staat in de gebouwde JavaScript en is
+dus niet geheim. Met de standaardpolicies uit `schema.sql` kan iedereen die de
+URL van de app kent alle uitgaven lezen en aanpassen. Voor een familievakantie is
+dat meestal de juiste afweging; wil je het strakker, zet dan Supabase Auth aan en
+scherp de policies aan.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Ontwikkelen
 
-## How can I deploy this project?
+```sh
+npm run check      # typecheck + lint + tests
+npm run typecheck
+npm run lint
+npm test
+```
 
-Simply open [Lovable](https://lovable.dev/projects/01e34991-a8a2-4b53-a56f-b1d47a697b90) and click on Share -> Publish.
+De rekenkern staat los van de UI en is getest:
 
-## I want to use a custom domain - is that possible?
+- `src/lib/split.ts` — verdeling van één uitgave over de deelnemers
+- `src/lib/settle.ts` — saldi en het afrekenplan
+- `src/lib/money.ts` — parsen, afronden en tonen van bedragen
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## Stack
+
+Vite · React · TypeScript · Tailwind · shadcn/ui · Supabase (optioneel)
