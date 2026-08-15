@@ -39,10 +39,23 @@ toestel. Genoeg om te proberen, maar de anderen zien er niets van.
 
 ## Delen met de hele reis
 
-Om iedereen op zijn eigen telefoon te laten invoeren:
+Om iedereen op zijn eigen telefoon te laten invoeren, is een Supabase-project
+nodig. Dat kan met één commando:
+
+```sh
+./scripts/setup-supabase.sh
+```
+
+Het script vraagt om een access token (eenmalig aan te maken op
+[supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)),
+laat je een bestaand project kiezen of een nieuw aanmaken, voert het schema uit
+en schrijft `.env`. Het token wordt nergens bewaard.
+
+Liever met de hand:
 
 1. Maak een gratis project op [supabase.com](https://supabase.com).
-2. Voer `supabase/schema.sql` uit in de SQL Editor van dat project.
+2. Voer `supabase/schema.sql` uit in de SQL Editor van dat project. Het bestand
+   is idempotent, je mag het opnieuw draaien.
 3. Kopieer `.env.example` naar `.env` en vul de projecturl en de anon-sleutel in
    (Project Settings → API).
 4. `npm run dev`, of publiceer de gebouwde site.

@@ -43,5 +43,22 @@ create policy expenses_open_access on expenses
   for all using (true) with check (true);
 
 -- Zorgt dat elk toestel wijzigingen van de anderen binnenkrijgt.
-alter publication supabase_realtime add table households;
-alter publication supabase_realtime add table expenses;
+-- 'add table' klaagt als de tabel er al in zit, vandaar de controle: zo kun je
+-- dit bestand gerust een tweede keer draaien.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'households'
+  ) then
+    alter publication supabase_realtime add table households;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'expenses'
+  ) then
+    alter publication supabase_realtime add table expenses;
+  end if;
+end
+$$;
