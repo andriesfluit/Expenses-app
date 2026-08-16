@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { centsToInput, formatDateShort, parseAmountToCents, todayIso } from '@/lib/money';
 import {
   SPLIT_MODE_HINTS,
@@ -32,6 +33,36 @@ type Props = {
 
 const SPLIT_MODES: SplitMode[] = ['per-person', 'per-household'];
 
+type VeldNaam = 'amount' | 'description' | 'paidBy' | 'participants';
+type Fouten = Partial<Record<VeldNaam, string>>;
+
+const VELD_LABELS: Record<VeldNaam, string> = {
+  amount: 'bedrag',
+  description: 'waarvoor',
+  paidBy: 'betaald door',
+  participants: 'wie deelt mee',
+};
+
+const VELD_IDS: Record<VeldNaam, string> = {
+  amount: 'expense-amount',
+  description: 'expense-description',
+  paidBy: 'expense-payer',
+  participants: 'expense-split',
+};
+
+/** "bedrag, waarvoor en betaald door" — leest prettiger dan een kale lijst. */
+function opsomming(delen: string[]): string {
+  if (delen.length <= 1) return delen[0] ?? '';
+  return `${delen.slice(0, -1).join(', ')} en ${delen[delen.length - 1]}`;
+}
+
+/** Koppelt een veld aan de melding eronder, voor screenreaders. */
+function foutProps(fout: string | undefined, id: string) {
+  return fout ? { 'aria-invalid': true, 'aria-describedby': `${id}-fout` } : {};
+}
+
+const FOUT_RAND = 'border-destructive focus-visible:ring-destructive';
+
 export const ExpenseForm = ({ households, editing, onSubmit, onCancelEdit }: Props) => {
   const [date, setDate] = useState(todayIso());
   const [amount, setAmount] = useState('');
@@ -42,6 +73,16 @@ export const ExpenseForm = ({ households, editing, onSubmit, onCancelEdit }: Pro
   // De verdeling is bijna altijd "per persoon, iedereen". Ingeklapt houdt het
   // formulier kort genoeg om op een telefoon in beeld te passen.
   const [verdelingOpen, setVerdelingOpen] = useState(false);
+  const [fouten, setFouten] = useState<Fouten>({});
+
+  /** Een veld dat je aanpast, is geen klacht meer waard. */
+  const wisFout = (veld: VeldNaam) =>
+    setFouten((huidig) => {
+      if (!huidig[veld]) return huidig;
+      const rest = { ...huidig };
+      delete rest[veld];
+      return rest;
+    });
 
   const alleIds = households.map((h) => h.id);
 
@@ -53,6 +94,7 @@ export const ExpenseForm = ({ households, editing, onSubmit, onCancelEdit }: Pro
     setSplitMode('per-person');
     setParticipants(alleIds);
     setVerdelingOpen(false);
+    setFouten({});
   };
 
   useEffect(() => {
@@ -98,23 +140,39 @@ export const ExpenseForm = ({ households, editing, onSubmit, onCancelEdit }: Pro
     const amountCents = parseAmountToCents(amount);
     const trimmedDescription = description.trim();
 
-    if (amountCents === null) {
-      toast.error('Vul een bedrag groter dan nul in, met hoogstens twee decimalen');
+    // Alles in één keer nakijken. Fout voor fout melden laat je drie keer op
+    // dezelfde knop drukken voordat je weet wat er nog mist.
+    const nieuweFouten: Fouten = {};
+    if (!amount.trim()) {
+      nieuweFouten.amount = 'Vul een bedrag in';
+    } else if (amountCents === null) {
+      nieuweFouten.amount = 'Geen geldig bedrag — groter dan nul, hoogstens twee decimalen';
+    }
+    if (!trimmedDescription) nieuweFouten.description = 'Vul in waarvoor het was';
+    if (!paidBy) nieuweFouten.paidBy = 'Kies wie betaald heeft';
+    if (participants.length === 0) nieuweFouten.participants = 'Kies minstens één huishouden';
+
+    setFouten(nieuweFouten);
+
+    const ontbrekend = (Object.keys(nieuweFouten) as VeldNaam[]).filter(
+      (veld) => veld !== 'participants',
+    );
+    if (Object.keys(nieuweFouten).length > 0) {
+      if (nieuweFouten.participants) setVerdelingOpen(true);
+      toast.error(
+        ontbrekend.length > 0
+          ? `Nog invullen: ${opsomming(ontbrekend.map((veld) => VELD_LABELS[veld]))}`
+          : nieuweFouten.participants!,
+      );
+      // Naar het eerste probleem springen, zodat je niet hoeft te zoeken.
+      const eerste = (Object.keys(nieuweFouten) as VeldNaam[])[0];
+      document.getElementById(VELD_IDS[eerste])?.focus();
       return;
     }
-    if (!trimmedDescription) {
-      toast.error('Vul een omschrijving in');
-      return;
-    }
-    if (!paidBy) {
-      toast.error('Geef aan wie betaald heeft');
-      return;
-    }
-    if (participants.length === 0) {
-      toast.error('Selecteer minstens één huishouden dat meedeelt');
-      setVerdelingOpen(true);
-      return;
-    }
+
+    // Hierboven al afgevangen; deze regel maakt dat aan het type duidelijk in
+    // plaats van de controle met een uitroepteken te omzeilen.
+    if (amountCents === null) return;
 
     const expense: Expense = {
       id: editing?.id ?? crypto.randomUUID(),
@@ -177,11 +235,20 @@ export const ExpenseForm = ({ households, editing, onSubmit, onCancelEdit }: Pro
                 inputMode="decimal"
                 placeholder="0,00"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="h-14 pl-9 text-xl font-medium tabular-nums"
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  wisFout('amount');
+                }}
+                className={cn('h-14 pl-9 text-xl font-medium tabular-nums', fouten.amount && FOUT_RAND)}
                 autoComplete="off"
+                {...foutProps(fouten.amount, 'expense-amount')}
               />
             </div>
+            {fouten.amount && (
+              <p id="expense-amount-fout" className="text-sm text-destructive">
+                {fouten.amount}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -190,16 +257,35 @@ export const ExpenseForm = ({ households, editing, onSubmit, onCancelEdit }: Pro
               id="expense-description"
               placeholder="bv. Boodschappen Spar"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="h-11"
+              onChange={(e) => {
+                setDescription(e.target.value);
+                wisFout('description');
+              }}
+              className={cn('h-11', fouten.description && FOUT_RAND)}
               autoComplete="off"
+              {...foutProps(fouten.description, 'expense-description')}
             />
+            {fouten.description && (
+              <p id="expense-description-fout" className="text-sm text-destructive">
+                {fouten.description}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="expense-payer">Betaald door</Label>
-            <Select value={paidBy} onValueChange={setPaidBy}>
-              <SelectTrigger id="expense-payer" className="h-11">
+            <Select
+              value={paidBy}
+              onValueChange={(waarde) => {
+                setPaidBy(waarde);
+                wisFout('paidBy');
+              }}
+            >
+              <SelectTrigger
+                id="expense-payer"
+                className={cn('h-11', fouten.paidBy && FOUT_RAND)}
+                {...foutProps(fouten.paidBy, 'expense-payer')}
+              >
                 <SelectValue placeholder="Kies huishouden" />
               </SelectTrigger>
               <SelectContent>
@@ -210,10 +296,15 @@ export const ExpenseForm = ({ households, editing, onSubmit, onCancelEdit }: Pro
                 ))}
               </SelectContent>
             </Select>
+            {fouten.paidBy && (
+              <p id="expense-payer-fout" className="text-sm text-destructive">
+                {fouten.paidBy}
+              </p>
+            )}
           </div>
 
           {/* Ingeklapt tot een leesbare regel; openklappen alleen als het afwijkt. */}
-          <div className="rounded-lg border bg-muted/30">
+          <div className={cn('rounded-lg border bg-muted/30', fouten.participants && FOUT_RAND)}>
             <button
               type="button"
               onClick={() => setVerdelingOpen((open) => !open)}
@@ -284,15 +375,19 @@ export const ExpenseForm = ({ households, editing, onSubmit, onCancelEdit }: Pro
                       >
                         <Checkbox
                           checked={participants.includes(household.id)}
-                          onCheckedChange={(checked) =>
-                            toggleParticipant(household.id, checked === true)
-                          }
+                          onCheckedChange={(checked) => {
+                            toggleParticipant(household.id, checked === true);
+                            wisFout('participants');
+                          }}
                         />
                         <span className="min-w-0 flex-1 truncate">{household.name}</span>
                         <span className="text-xs text-muted-foreground">{household.size}p</span>
                       </label>
                     ))}
                   </div>
+                  {fouten.participants && (
+                    <p className="text-sm text-destructive">{fouten.participants}</p>
+                  )}
                 </fieldset>
               </div>
             )}
