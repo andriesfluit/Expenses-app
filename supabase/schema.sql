@@ -2,7 +2,7 @@
 -- Uitvoeren in de SQL Editor van een Supabase-project.
 
 create table if not exists households (
-  id uuid primary key,
+  id uuid primary key default gen_random_uuid(),
   trip_id text not null default 'vakantie',
   name text not null,
   size integer not null check (size > 0),
@@ -10,7 +10,7 @@ create table if not exists households (
 );
 
 create table if not exists expenses (
-  id uuid primary key,
+  id uuid primary key default gen_random_uuid(),
   trip_id text not null default 'vakantie',
   date date not null,
   description text not null,
