@@ -1,4 +1,4 @@
-# Vakantiekas
+# Wissant
 
 Uitgaven van een groepsvakantie verdelen over meerdere huishoudens en aan het
 eind afrekenen in zo min mogelijk overschrijvingen.

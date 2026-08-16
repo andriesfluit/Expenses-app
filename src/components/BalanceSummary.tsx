@@ -78,7 +78,50 @@ export const BalanceSummary = ({ balances, transfers, households, totalCents }: 
   const sorted = [...balances].sort((a, b) => b.netCents - a.netCents);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Wallet className="h-5 w-5" aria-hidden="true" />
+            Afrekenen
+          </CardTitle>
+          <CardDescription>
+            {transfers.length === 0
+              ? 'Iedereen staat gelijk.'
+              : `${transfers.length} ${transfers.length === 1 ? 'overschrijving' : 'overschrijvingen'} en het is rond`}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          {transfers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {hasData
+                ? 'Alle huishoudens hebben precies hun aandeel betaald.'
+                : 'Voeg uitgaven toe om te zien wie wie moet terugbetalen.'}
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {transfers.map((transfer, index) => (
+                <li
+                  key={`${transfer.fromId}-${transfer.toId}-${index}`}
+                  className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border bg-muted/40 p-3 text-sm"
+                >
+                  <span className="font-medium">{nameOf(transfer.fromId)}</span>
+                  <ArrowRight
+                    className="h-4 w-4 shrink-0 text-muted-foreground"
+                    aria-label="betaalt aan"
+                  />
+                  <span className="font-medium">{nameOf(transfer.toId)}</span>
+                  <span className="ml-auto font-semibold tabular-nums">
+                    {formatCents(transfer.amountCents)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -131,49 +174,6 @@ export const BalanceSummary = ({ balances, transfers, households, totalCents }: 
                 </table>
               </details>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Wallet className="h-5 w-5" aria-hidden="true" />
-            Afrekenen
-          </CardTitle>
-          <CardDescription>
-            {transfers.length === 0
-              ? 'Iedereen staat gelijk.'
-              : `${transfers.length} ${transfers.length === 1 ? 'overschrijving' : 'overschrijvingen'} en het is rond`}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          {transfers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {hasData
-                ? 'Alle huishoudens hebben precies hun aandeel betaald.'
-                : 'Voeg uitgaven toe om te zien wie wie moet terugbetalen.'}
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {transfers.map((transfer, index) => (
-                <li
-                  key={`${transfer.fromId}-${transfer.toId}-${index}`}
-                  className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border bg-muted/40 p-3 text-sm"
-                >
-                  <span className="font-medium">{nameOf(transfer.fromId)}</span>
-                  <ArrowRight
-                    className="h-4 w-4 shrink-0 text-muted-foreground"
-                    aria-label="betaalt aan"
-                  />
-                  <span className="font-medium">{nameOf(transfer.toId)}</span>
-                  <span className="ml-auto font-semibold tabular-nums">
-                    {formatCents(transfer.amountCents)}
-                  </span>
-                </li>
-              ))}
-            </ul>
           )}
         </CardContent>
       </Card>
