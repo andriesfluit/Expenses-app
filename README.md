@@ -70,6 +70,28 @@ URL van de app kent alle uitgaven lezen en aanpassen. Voor een familievakantie i
 dat meestal de juiste afweging; wil je het strakker, zet dan Supabase Auth aan en
 scherp de policies aan.
 
+## Publiceren
+
+De app hoort niet alleen op één laptop te draaien: de anderen kunnen pas
+meedoen als er een adres is dat iedereen kan openen. `.github/workflows/deploy.yml`
+bouwt bij elke push naar `main` en publiceert naar GitHub Pages.
+
+Eenmalig instellen:
+
+1. **Settings → Secrets and variables → Actions → New repository secret**, twee keer:
+   - `VITE_SUPABASE_URL` → `https://<projectref>.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` → de anon/publishable key
+2. **Settings → Pages → Source: GitHub Actions**
+
+De workflow weigert te publiceren als een van die secrets ontbreekt. Dat is
+opzet: zonder die twee zou de app prima bouwen en op ieders telefoon werken,
+maar zou iedereen zijn eigen uitgaven in zijn eigen browser bijhouden zonder
+het te merken. Na de build controleert de workflow nog eens of de project-URL
+echt in de bundle staat.
+
+Een andere reis dan de standaard krijg je met een repository *variable*
+`VITE_TRIP_ID` (Settings → Secrets and variables → Actions → Variables).
+
 ## Ontwikkelen
 
 ```sh
