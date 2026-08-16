@@ -73,11 +73,23 @@ scherp de policies aan.
 ## Ontwikkelen
 
 ```sh
+npm run check-env  # controleert .env voordat je de app start
 npm run check      # typecheck + lint + tests
 npm run typecheck
 npm run lint
 npm test
 ```
+
+Gebruik na een `git pull` bij voorkeur `npm ci` in plaats van `npm install`:
+`ci` installeert exact volgens `package-lock.json` en laat dat bestand met rust,
+terwijl `install` het kan herschrijven en de volgende pull dan blokkeert met
+"Your local changes would be overwritten". Is dat al gebeurd, dan haalt
+`git checkout -- package-lock.json` de lokale wijziging weg; het bestand is
+gegenereerd, dus daar gaat niets verloren.
+
+Werkt de verbinding met Supabase niet, begin dan bij `npm run check-env`. Dat
+noemt de oorzaak — een gemaskeerde sleutel, een afgekapte JWT, de verkeerde
+rol, een ander project — in plaats van het kale "Invalid API key".
 
 De rekenkern staat los van de UI en is getest:
 
