@@ -23,9 +23,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Controleer of GitHub Pages klaarstaat
+        # De publiceer-stap draait in een aparte omgeving. Wordt die geweigerd,
+        # dan krijgt hij geen machine toegewezen en dus ook geen logboek: je
+        # ziet alleen "failure" zonder reden. Deze stap vraagt de instelling op
+        # terwijl er nog wel een logboek is, en zegt precies wat eraan mankeert.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          code=$(curl -sS -o /tmp/pages.json -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" || echo "000")
+
+          if [ "$code" = "404" ]; then
+            echo "::error::GitHub Pages staat uit voor deze repository."
+            echo "Zet het aan: Settings > Pages > Build and deployment > Source > GitHub Actions."
+            exit 1
+          fi
+
+          if [ "$code" != "200" ]; then
+            echo "::error::Kon de Pages-instelling niet opvragen (HTTP $code)."
+            cat /tmp/pages.json
+            exit 1
+          fi
+
+          soort=$(jq -r '.build_type // "leeg"' /tmp/pages.json)
+          if [ "$soort" != "workflow" ]; then
+            echo "::error::Pages publiceert nu via '$soort' in plaats van via Actions."
+            echo "Zet Settings > Pages > Source op 'GitHub Actions' en niet op 'Deploy from a branch'."
+            exit 1
+          fi
+
+          echo "Pages staat aan en publiceert via Actions."
+          echo "Adres: $(jq -r '.html_url' /tmp/pages.json)"
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
