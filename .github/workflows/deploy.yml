@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - claude/expenses-app-review-x4i20g
   workflow_dispatch:
 
 permissions:
