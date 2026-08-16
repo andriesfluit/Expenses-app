@@ -91,6 +91,24 @@ Werkt de verbinding met Supabase niet, begin dan bij `npm run check-env`. Dat
 noemt de oorzaak — een gemaskeerde sleutel, een afgekapte JWT, de verkeerde
 rol, een ander project — in plaats van het kale "Invalid API key".
 
+### Als de sleutel niet in één keer schoon te plakken is
+
+Een anon key is ruim 200 tekens op één regel. Sommige terminals en chatvensters
+verminken zoiets: er verdwijnen tekens, of er komen bulletjes voor in de plaats.
+Plak hem dan in stukken en laat de shell hem samenstellen:
+
+```sh
+A=<eerste stuk>
+B=<tweede stuk>
+C=<derde stuk>
+printf 'VITE_SUPABASE_URL=https://<ref>.supabase.co\nVITE_SUPABASE_ANON_KEY=%s\nVITE_TRIP_ID=vakantie\n' "$A$B$C" > .env
+npm run check-env
+```
+
+`check-env` controleert daarna de lengte, de vaste JWT-header en de
+handtekening, dus een verminkte sleutel valt meteen door de mand in plaats van
+pas bij het eerste verzoek aan Supabase.
+
 De rekenkern staat los van de UI en is getest:
 
 - `src/lib/split.ts` — verdeling van één uitgave over de deelnemers

@@ -53,9 +53,21 @@ if (!url) {
 if (!sleutel) {
   faal('VITE_SUPABASE_ANON_KEY ontbreekt.');
 } else if (/[•∙▪●*]/.test(sleutel)) {
+  // Waar de bulletjes staan verraadt de oorzaak: aaneengesloten in het midden
+  // wijst op een gemaskeerd veld, verspreid op een kopieerprobleem.
+  const posities = [...sleutel]
+    .map((t, i) => (/[•∙▪●*]/.test(t) ? i + 1 : null))
+    .filter((i) => i !== null);
+  const reeks =
+    posities.length > 1 && posities[posities.length - 1] - posities[0] === posities.length - 1
+      ? `${posities[0]} tot en met ${posities[posities.length - 1]}`
+      : posities.join(', ');
+
   faal(
-    'De sleutel bevat bulletjes of sterretjes.',
-    'Dit is de verborgen weergave. Klik in Supabase eerst op Reveal en kopieer dan pas.',
+    `De sleutel bevat ${posities.length} bulletje(s) of sterretje(s), op positie ${reeks} van ${sleutel.length}.`,
+    'Dit is de verborgen weergave, niet de sleutel zelf. Klik in Supabase op Reveal ' +
+      'en kopieer dan pas. Lukt kopieren niet in een keer, plak de sleutel dan in ' +
+      'korte stukken (zie README).',
   );
 } else {
   const raar = [...sleutel].filter((t) => {
