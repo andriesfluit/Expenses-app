@@ -4,6 +4,9 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // GitHub Pages serveert een project-repo onder /<repo>/, dus daar moeten de
+  // asset-paden op aansluiten. Lokaal en bij een eigen domein blijft dit "/".
+  base: process.env.VITE_BASE_PATH || "/",
   server: {
     // true luistert op alle netwerkinterfaces, zodat de dev-server ook vanaf
     // een telefoon op hetzelfde wifi te openen is. Het oude "::" was

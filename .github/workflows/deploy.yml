@@ -1,0 +1,95 @@
+name: Publiceren naar GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/expenses-app-review-x4i20g
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Eén publicatie tegelijk; een nieuwere push verdringt een lopende build.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  bouwen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck, lint en tests
+        run: npm run check
+
+      - name: Controleer of de Supabase-secrets bestaan
+        # Zonder deze stap bouwt de app gewoon door met lokale opslag. Ze zou
+        # dan werken op ieders telefoon, maar niemand zou de uitgaven van de
+        # anderen zien - een fout die je pas op vakantie ontdekt.
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SLEUTEL: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          ontbreekt=0
+          if [ -z "$URL" ]; then
+            echo "::error::Secret VITE_SUPABASE_URL ontbreekt."
+            ontbreekt=1
+          fi
+          if [ -z "$SLEUTEL" ]; then
+            echo "::error::Secret VITE_SUPABASE_ANON_KEY ontbreekt."
+            ontbreekt=1
+          fi
+          if [ "$ontbreekt" = "1" ]; then
+            echo "::error::Zet ze onder Settings > Secrets and variables > Actions."
+            echo "Zonder die twee zou de gepubliceerde app op lokale opslag draaien"
+            echo "en zou niemand elkaars uitgaven zien."
+            exit 1
+          fi
+          echo "Beide secrets aanwezig."
+
+      - name: Bouwen
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_TRIP_ID: ${{ vars.VITE_TRIP_ID || 'vakantie' }}
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - name: Controleer dat de gedeelde opslag in de bundle zit
+        # Laatste vangnet: staat de project-URL niet in de uitvoer, dan is er
+        # iets misgegaan met de secrets en publiceren we beter niets.
+        run: |
+          if ! grep -rq "supabase.co" dist/assets/*.js; then
+            echo "::error::De gebouwde app bevat geen Supabase-URL."
+            exit 1
+          fi
+          echo "Gedeelde opslag zit in de bundle."
+
+      # Zonder 404.html geeft Pages bij een verkeerde URL zijn eigen foutpagina.
+      - name: Val terug op de app bij een onbekend pad
+        run: cp dist/index.html dist/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  publiceren:
+    needs: bouwen
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicatie.outputs.page_url }}
+    steps:
+      - id: publicatie
+        uses: actions/deploy-pages@v4
