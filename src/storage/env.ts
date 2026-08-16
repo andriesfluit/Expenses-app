@@ -42,6 +42,19 @@ export function leesEnvWaarde(naam: string, ruw: string | undefined): EnvWaarde 
 
   if (!opgeschoond) return { ok: false, probleem: `${naam} is leeg.` };
 
+  // Bullets en sterretjes betekenen bijna altijd dat de waarde uit een
+  // afgeschermd veld is gekopieerd voordat die onthuld was. Dat verdient een
+  // ander advies dan "er zit een raar teken in".
+  if (/[•∙▪●*]/.test(opgeschoond)) {
+    return {
+      ok: false,
+      probleem:
+        `${naam} bevat bulletjes of sterretjes, dus dit is de verborgen weergave ` +
+        'van de sleutel en niet de sleutel zelf. Klik in Supabase eerst op Reveal ' +
+        '(het oogje) bij de sleutel, kopieer hem dan pas, en herstart de dev-server.',
+    };
+  }
+
   const stout = [...opgeschoond].find((teken) => {
     const code = teken.codePointAt(0)!;
     return code < 0x20 || code > 0x7e;

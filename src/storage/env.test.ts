@@ -68,6 +68,21 @@ describe('leesEnvWaarde', () => {
     expect(leesEnvWaarde('X', undefined).ok).toBe(false);
   });
 
+  it('herkent een gemaskeerde sleutel aan de bulletjes', () => {
+    const gemaskeerd = JWT.slice(0, 12) + teken(0x2022).repeat(8);
+    const uitkomst = leesEnvWaarde('VITE_SUPABASE_ANON_KEY', gemaskeerd);
+    expect(uitkomst.ok).toBe(false);
+    expect(uitkomst.ok === false && uitkomst.probleem).toContain('Reveal');
+    // Niet de generieke codepunt-melding, maar het bruikbare advies.
+    expect(uitkomst.ok === false && uitkomst.probleem).not.toContain('U+2022');
+  });
+
+  it('herkent ook sterretjes als maskering', () => {
+    const uitkomst = leesEnvWaarde('X', `${JWT.slice(0, 12)}********`);
+    expect(uitkomst.ok).toBe(false);
+    expect(uitkomst.ok === false && uitkomst.probleem).toContain('Reveal');
+  });
+
   it('accepteert een echte Supabase-URL', () => {
     const url = 'https://bnfpunivfhucwmuuvvsw.supabase.co';
     expect(leesEnvWaarde('VITE_SUPABASE_URL', url)).toEqual({ ok: true, waarde: url });
