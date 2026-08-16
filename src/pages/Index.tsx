@@ -48,10 +48,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-6 md:py-10">
-      <div className="container mx-auto max-w-5xl space-y-6">
+      <div className="container mx-auto max-w-5xl space-y-4">
         <header className="space-y-2">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Vakantiekas</h1>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Wissant</h1>
             <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
               {storageKind === 'supabase' ? (
                 <Cloud className="h-3.5 w-3.5" aria-hidden="true" />
@@ -91,37 +91,41 @@ const Index = () => {
           </div>
         ) : (
           <>
-            <BalanceSummary
-              balances={balances}
-              transfers={transfers}
-              households={households}
-              totalCents={totalCents}
-            />
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div ref={formRef} className="space-y-6">
+            {/* Invoeren is wat je tien keer per dag doet, dus dat staat boven
+                alles. Op een breed scherm komt de afrekening ernaast; op een
+                telefoon eronder, waar je hem vindt na het scrollen. */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
+              <div ref={formRef}>
                 <ExpenseForm
                   households={households}
                   editing={editing}
                   onSubmit={editing ? updateExpense : addExpense}
                   onCancelEdit={() => setEditing(null)}
                 />
-                <HouseholdManager
-                  households={households}
-                  expenses={expenses}
-                  onAdd={addHousehold}
-                  onUpdate={updateHousehold}
-                  onRemove={removeHousehold}
-                />
               </div>
 
-              <ExpenseList
-                expenses={expenses}
+              <BalanceSummary
+                balances={balances}
+                transfers={transfers}
                 households={households}
-                onEdit={startEditing}
-                onRemove={handleRemoveExpense}
+                totalCents={totalCents}
               />
             </div>
+
+            <ExpenseList
+              expenses={expenses}
+              households={households}
+              onEdit={startEditing}
+              onRemove={handleRemoveExpense}
+            />
+
+            <HouseholdManager
+              households={households}
+              expenses={expenses}
+              onAdd={addHousehold}
+              onUpdate={updateHousehold}
+              onRemove={removeHousehold}
+            />
           </>
         )}
       </div>

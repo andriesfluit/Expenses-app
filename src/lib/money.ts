@@ -46,6 +46,13 @@ export function formatDate(isoDate: string): string {
   });
 }
 
+/** Korte vorm zonder jaartal, voor plekken waar de breedte telt. */
+export function formatDateShort(isoDate: string): string {
+  const parsed = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return isoDate;
+  return parsed.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' });
+}
+
 export function todayIso(): string {
   const now = new Date();
   const offsetMs = now.getTimezoneOffset() * 60_000;

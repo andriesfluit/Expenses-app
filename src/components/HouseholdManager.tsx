@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Minus, Plus, Trash2, Users } from 'lucide-react';
+import { ChevronDown, Minus, Plus, Trash2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,9 @@ type Props = {
 export const HouseholdManager = ({ households, expenses, onAdd, onUpdate, onRemove }: Props) => {
   const [name, setName] = useState('');
   const [size, setSize] = useState('2');
+  // Huishoudens stel je één keer in. Zolang er nog geen zijn, staat het open,
+  // daarna is het opgeruimder om het dicht te houden.
+  const [open, setOpen] = useState(households.length === 0);
 
   const totalPeople = households.reduce((sum, h) => sum + h.size, 0);
 
@@ -72,19 +75,32 @@ export const HouseholdManager = ({ households, expenses, onAdd, onUpdate, onRemo
 
   return (
     <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Users className="h-5 w-5" aria-hidden="true" />
-          Wie reist mee
-        </CardTitle>
-        <CardDescription>
-          {households.length === 0
-            ? 'Voeg eerst de huishoudens toe die de kosten delen.'
-            : `${households.length} ${households.length === 1 ? 'huishouden' : 'huishoudens'}, ${totalPeople} ${totalPeople === 1 ? 'persoon' : 'personen'}`}
-        </CardDescription>
+      <CardHeader className="pb-0">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center gap-2 text-left"
+          aria-expanded={open}
+        >
+          <Users className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-lg">Wie reist mee</CardTitle>
+            <CardDescription className="mt-0.5">
+              {households.length === 0
+                ? 'Voeg eerst de huishoudens toe die de kosten delen.'
+                : `${households.length} ${households.length === 1 ? 'huishouden' : 'huishoudens'}, ${totalPeople} ${totalPeople === 1 ? 'persoon' : 'personen'}`}
+            </CardDescription>
+          </div>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+              open ? 'rotate-180' : ''
+            }`}
+            aria-hidden="true"
+          />
+        </button>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className={`space-y-4 ${open ? 'pt-4' : 'hidden'}`}>
         {/* De naam krijgt op smalle schermen een eigen regel, anders knijpen de
             stepper en de prullenbak hem tot "Ge…". */}
         {households.length > 0 && (

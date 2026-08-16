@@ -5,6 +5,33 @@ import { createRepository } from '@/storage';
 
 const EMPTY: TripData = { households: [], expenses: [] };
 
+/** Ruim genoeg voor een trage verbinding, kort genoeg om niet te blijven hangen. */
+const LAAD_TIMEOUT_MS = 12_000;
+
+export function withTimeout<T>(belofte: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const klok = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `geen antwoord binnen ${Math.round(ms / 1000)} seconden. Controleer je internetverbinding.`,
+          ),
+        ),
+      ms,
+    );
+    belofte.then(
+      (waarde) => {
+        clearTimeout(klok);
+        resolve(waarde);
+      },
+      (fout) => {
+        clearTimeout(klok);
+        reject(fout);
+      },
+    );
+  });
+}
+
 /**
  * Houdt de reisgegevens bij en schrijft elke wijziging weg via de gekozen
  * opslag. Bij gedeelde opslag wordt ook op wijzigingen van andere toestellen
@@ -27,7 +54,10 @@ export function useTripData() {
 
   const reload = useCallback(async () => {
     try {
-      const fresh = await repository.load();
+      // Zonder deadline blijft de app op "laden" staan zolang het verzoek
+      // hangt. Op een camping met half bereik is dat het verschil tussen een
+      // duidelijke melding en een scherm dat nooit iets doet.
+      const fresh = await withTimeout(repository.load(), LAAD_TIMEOUT_MS);
       if (mounted.current) {
         setData(fresh);
         setError(null);
