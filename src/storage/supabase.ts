@@ -36,6 +36,26 @@ const toExpense = (row: ExpenseRow): Expense => ({
   participants: row.participants ?? [],
 });
 
+/**
+ * Een mislukt verzoek aan Supabase komt als "TypeError: Failed to fetch"
+ * binnen: de browser vertelt niet waaróm hij er niet kwam. In de praktijk is
+ * het bijna altijd een van deze twee, en dat scheelt een zoektocht.
+ */
+export function verklaar(melding: string): string {
+  if (/failed to fetch|networkerror|load failed/i.test(melding)) {
+    return (
+      'de database is niet bereikbaar. Twee gebruikelijke oorzaken: je hebt geen ' +
+      'internet, of het Supabase-project staat gepauzeerd (dat gebeurt op een gratis ' +
+      'project na een week zonder gebruik; in het Supabase-dashboard zet je het met ' +
+      '"Restore project" weer aan).'
+    );
+  }
+  if (/invalid api key/i.test(melding)) {
+    return 'de sleutel wordt geweigerd. Controleer .env met "npm run check-env".';
+  }
+  return melding;
+}
+
 /** Gedeelde opslag: iedereen die de app opent, werkt in dezelfde reis. */
 export function createSupabaseRepository(
   url: string,
@@ -45,7 +65,7 @@ export function createSupabaseRepository(
   const client: SupabaseClient = createClient(url, anonKey);
 
   const failOn = (error: { message: string } | null, wat: string) => {
-    if (error) throw new Error(`${wat} mislukt: ${error.message}`);
+    if (error) throw new Error(`${wat} mislukt: ${verklaar(error.message)}`);
   };
 
   return {
