@@ -64,6 +64,13 @@ De app schakelt vanzelf over zodra die twee variabelen gezet zijn; de statusrege
 rechtsboven laat zien welke opslag actief is. Wijzigingen van andere toestellen
 komen live binnen.
 
+**Let op: een gratis Supabase-project pauzeert** na ongeveer een week zonder
+gebruik. De app geeft dan "de database is niet bereikbaar"; de data blijft
+staan. Zet het project weer aan met **Restore project** in het
+[Supabase-dashboard](https://supabase.com/dashboard). Tijdens de reis gebruik
+je de app dagelijks, dus dan blijft hij van zichzelf actief — het speelt vooral
+in de stille periode ervoor en erna.
+
 **Over de beveiliging**: de anon-sleutel staat in de gebouwde JavaScript en is
 dus niet geheim. Met de standaardpolicies uit `schema.sql` kan iedereen die de
 URL van de app kent alle uitgaven lezen en aanpassen. Voor een familievakantie is
